@@ -1,0 +1,5 @@
+{
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "files.refactoring.autoSave": false,
+    "files.autoSaveWhenNoErrors": true
+}
