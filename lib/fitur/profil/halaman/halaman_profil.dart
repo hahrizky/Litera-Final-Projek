@@ -16,7 +16,6 @@ import 'package:litera2/fitur/profil/widget/avatar_profil.dart';
 import 'package:litera2/fitur/profil/widget/tile_menu_profil.dart';
 import 'package:litera2/fitur/profil/widget/kartu_statistik.dart';
 import 'package:litera2/main.dart';
-import 'package:litera2/fitur/auth/halaman/halaman_onboarding.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});

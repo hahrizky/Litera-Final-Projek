@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:litera2/fitur/buku/model/model_buku.dart';
 import 'package:litera2/fitur/buku/halaman/halaman_baca.dart';
 import 'package:litera2/fitur/buku/service/service_riwayat.dart';
-import 'package:litera2/fitur/buku/service/service_buku_lokal.dart' as litera_local;
 
 class BookService {
   /// Mendapatkan URL PDF yang akan di-stream saat pembaca dibuka.

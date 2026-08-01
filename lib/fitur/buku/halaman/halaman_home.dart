@@ -10,14 +10,11 @@ import 'package:litera2/fitur/buku/model/model_buku.dart';
 import 'package:litera2/fitur/buku/model/model_riwayat.dart';
 import 'package:litera2/fitur/buku/provider/provider_buku.dart';
 import 'package:litera2/fitur/buku/provider/provider_riwayat.dart';
-import 'package:litera2/global/provider/provider_navigasi.dart';
-import 'package:litera2/global/widget/footer_aplikasi.dart';
-import 'package:litera2/fitur/buku/widget/kartu_buku.dart';
-import 'package:litera2/fitur/buku/widget/cover_buku.dart';
-import 'package:litera2/global/widget/state_kosong.dart';
 import 'package:litera2/fitur/profil/widget/avatar_profil.dart';
-import 'package:litera2/fitur/buku/service/service_buku.dart';
 import 'package:litera2/fitur/buku/halaman/halaman_detail.dart';
+import 'package:litera2/fitur/buku/service/service_buku.dart';
+import 'package:litera2/fitur/buku/widget/cover_buku.dart';
+import 'package:litera2/global/widget/footer_aplikasi.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

@@ -15,7 +15,7 @@ abstract final class AppConstants {
   /// Inject during build: flutter run --dart-define=GOOGLE_BOOKS_API_KEY=your_key_here
   /// Or: flutter build apk --dart-define=GOOGLE_BOOKS_API_KEY=your_key_here
   static const String booksApiBase = 'https://www.googleapis.com/books/v1/volumes';
-  static const String booksApiKey = String.fromEnvironment('GOOGLE_BOOKS_API_KEY', defaultValue: 'AIzaSyCqMloMeoXcQd6npLA3QbIIYitqel88NBY');
+  static const String booksApiKey = String.fromEnvironment('GOOGLE_BOOKS_API_KEY', defaultValue: '');
   static const int booksDefaultMax = 20;
   static const int booksPageSize = 20;
   static const Duration booksTimeout = Duration(seconds: 20);

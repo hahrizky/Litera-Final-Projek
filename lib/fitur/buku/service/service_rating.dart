@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:litera2/core/konstan/konstan_aplikasi.dart';
 import 'package:litera2/fitur/buku/model/model_review.dart';
-import 'package:litera2/global/service/service_firestore.dart';
 
 
 /// Mengelola seluruh operasi Firestore untuk sistem rating dan ulasan buku.

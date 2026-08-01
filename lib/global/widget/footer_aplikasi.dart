@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:litera2/core/konstan/warna_aplikasi.dart';
 
 class AppFooter extends StatelessWidget {
   const AppFooter({super.key});
