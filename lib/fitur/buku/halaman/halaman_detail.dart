@@ -244,11 +244,13 @@ class _DetailBookPageState extends State<DetailBookPage> {
                       LayoutBuilder(
                         builder: (context, constraints) {
                           final style = const TextStyle(fontSize: 15, height: 1.7, color: AppColors.textSecondary, fontWeight: FontWeight.w500);
-                          final span = TextSpan(text: book.description, style: style);
+                          final effectiveStyle = DefaultTextStyle.of(context).style.merge(style);
+                          final span = TextSpan(text: book.description, style: effectiveStyle);
                           final tp = TextPainter(
                             text: span,
                             maxLines: 5,
-                            textDirection: TextDirection.ltr,
+                            textDirection: Directionality.of(context),
+                            textScaler: MediaQuery.textScalerOf(context),
                           );
                           tp.layout(maxWidth: constraints.maxWidth);
                           final isOverflowing = tp.didExceedMaxLines;

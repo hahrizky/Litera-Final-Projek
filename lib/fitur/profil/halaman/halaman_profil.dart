@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:litera2/core/bahasa/app_localizations.dart';
 
 import 'package:litera2/fitur/auth/service/service_auth.dart';
@@ -14,7 +15,6 @@ import 'package:litera2/global/provider/provider_tema.dart';
 import 'package:litera2/fitur/buku/provider/provider_riwayat.dart';
 import 'package:litera2/fitur/profil/widget/avatar_profil.dart';
 import 'package:litera2/fitur/profil/widget/tile_menu_profil.dart';
-import 'package:litera2/fitur/profil/widget/kartu_statistik.dart';
 import 'package:litera2/main.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -90,15 +90,18 @@ class _ProfileViewState extends State<_ProfileView> {
             // terkadang tidak langsung emit saat updatePhotoURL
             final user = controller.currentUser ?? snapshot.data;
 
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-              physics: const BouncingScrollPhysics(),
+            return RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () async {
+                // Refresh data riwayat baca untuk mengupdate statistik (restart listener)
+                context.read<HistoryProvider>().startListening();
+                await Future.delayed(const Duration(milliseconds: 600));
+              },
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               children: [
                 _buildAvatarSection(context, controller, user, l10n, isDark),
-                const SizedBox(height: 32),
-                _buildSectionTitle(l10n.readingStats),
-                const SizedBox(height: 16),
-                _buildStats(context, l10n),
                 const SizedBox(height: 32),
                 _buildSectionTitle(l10n.accountSection),
                 const SizedBox(height: 8),
@@ -112,16 +115,17 @@ class _ProfileViewState extends State<_ProfileView> {
                 _buildSectionTitle(l10n.otherSection),
                 const SizedBox(height: 8),
                 _buildOtherSection(context, l10n),
-                const SizedBox(height: 24),
-                _buildAdminSection(context),
                 const SizedBox(height: 32),
                 const Divider(),
                 const SizedBox(height: 16),
                 _buildLogoutButton(context, l10n),
+                const SizedBox(height: 12),
+                _buildDeleteAccountButton(context, l10n),
                 const SizedBox(height: 20),
               ],
-            );
-          },
+            ),
+          );
+        },
         );
       },
     );
@@ -188,25 +192,6 @@ class _ProfileViewState extends State<_ProfileView> {
     );
   }
 
-  Widget _buildStats(BuildContext context, AppLocalizations l10n) {
-    return Consumer<HistoryProvider>(
-      builder: (context, historyProv, _) {
-        final finishedCount = historyProv.finishedBooks.length;
-        final historyCount = historyProv.history.length;
-        
-        return Row(
-          children: [
-            StatCard(label: l10n.statBooksRead, value: finishedCount.toString(), icon: Icons.auto_stories_rounded, color: AppColors.primary),
-            const SizedBox(width: 12),
-            StatCard(label: l10n.statReadingHours, value: (historyCount * 1.5).toInt().toString(), icon: Icons.timer_rounded, color: Colors.blueAccent),
-            const SizedBox(width: 12),
-            StatCard(label: l10n.statStreak, value: '7', icon: Icons.local_fire_department_rounded, color: Colors.orangeAccent),
-          ],
-        );
-      },
-    );
-  }
-
   Widget _buildAccountSection(BuildContext context, ProfileController controller, User? user, AppLocalizations l10n) {
     return Column(
       children: [
@@ -263,7 +248,12 @@ class _ProfileViewState extends State<_ProfileView> {
   Widget _buildOtherSection(BuildContext context, AppLocalizations l10n) {
     return Column(
       children: [
-        ProfileMenuTile(icon: Icons.help_center_rounded, iconColor: Colors.orangeAccent, title: l10n.helpCenter, onTap: () {}),
+        ProfileMenuTile(
+          icon: Icons.help_center_rounded, 
+          iconColor: Colors.orangeAccent, 
+          title: l10n.helpCenter, 
+          onTap: () => _launchHelpCenter(context)
+        ),
         ProfileMenuTile(
           icon: Icons.info_rounded,
           iconColor: Colors.blueGrey,
@@ -280,9 +270,6 @@ class _ProfileViewState extends State<_ProfileView> {
     );
   }
 
-  Widget _buildAdminSection(BuildContext context) {
-    return const SizedBox.shrink();
-  }
 
   Widget _buildLogoutButton(BuildContext context, AppLocalizations l10n) {
     return SizedBox(
@@ -566,4 +553,74 @@ class _ProfileViewState extends State<_ProfileView> {
       ),
     );
   }
+
+  Future<void> _launchHelpCenter(BuildContext context) async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'support@litera.com',
+      query: 'subject=Bantuan Aplikasi Litera',
+    );
+    if (await canLaunchUrl(emailLaunchUri)) {
+      await launchUrl(emailLaunchUri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka aplikasi email')),
+        );
+      }
+    }
+  }
+
+  Widget _buildDeleteAccountButton(BuildContext context, AppLocalizations l10n) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => _showDeleteAccountDialog(context, l10n),
+        icon: const Icon(Icons.person_off_rounded, color: AppColors.error),
+        label: const Text('Hapus Akun', style: TextStyle(fontSize: 16, color: AppColors.error, fontWeight: FontWeight.w800)),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: AppColors.error, width: 2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, AppLocalizations l10n) {
+    final controller = context.read<ProfileController>();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Hapus Akun', style: TextStyle(fontWeight: FontWeight.w900)),
+        content: const Text('Apakah Anda yakin ingin menghapus akun ini secara permanen? Semua data Anda akan hilang dan tidak dapat dikembalikan.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final result = await controller.deleteAccount();
+              if (context.mounted) {
+                if (result == 'success') {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Akun berhasil dihapus')));
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const AuthGate()), (route) => false);
+                } else if (result == 'requires-recent-login') {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Silakan login ulang terlebih dahulu untuk menghapus akun.')));
+                  await AuthService().signOut();
+                  if (!context.mounted) return;
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const AuthGate()), (route) => false);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result)));
+                }
+              }
+            },
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

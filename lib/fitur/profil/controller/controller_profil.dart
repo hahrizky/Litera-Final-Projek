@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:litera2/global/service/service_upload.dart';
 import 'package:litera2/fitur/profil/service/service_profil.dart';
+import 'package:litera2/fitur/auth/service/service_auth.dart';
 
 class ProfileController extends ChangeNotifier {
   final _picker = ImagePicker();
@@ -116,6 +117,21 @@ class ProfileController extends ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  // --- Hapus Akun ---
+  Future<String> deleteAccount() async {
+    _setLoading(true);
+    try {
+      final result = await AuthService().deleteAccount();
+      if (result != 'success' && result != 'requires-recent-login') {
+        _errorMessage = result;
+        notifyListeners();
+      }
+      return result;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   void _setLoading(bool value) {

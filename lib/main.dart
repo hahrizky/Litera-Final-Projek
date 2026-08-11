@@ -1,13 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:litera2/core/bahasa/app_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:litera2/core/konstan/konstan_aplikasi.dart';
+import 'package:litera2/core/konstan/warna_aplikasi.dart';
 import 'package:litera2/fitur/auth/halaman/halaman_login.dart';
 import 'package:litera2/fitur/profil/controller/controller_profil.dart';
 import 'package:litera2/global/provider/provider_navigasi.dart';
@@ -23,6 +26,13 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Lock app orientation to portrait globally
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
   await Firebase.initializeApp();
   await Supabase.initialize(url: 'https://lhakcofpljwbtoydeaqv.supabase.co', publishableKey: 'sb_publishable_FugIQ4eqfXyXroYgBPnhuQ_gt9v4SCu');
 
@@ -135,13 +145,13 @@ class _AuthGateState extends State<AuthGate> {
             body: Center(child: CircularProgressIndicator()),
           );
         } else if (snapshot.hasData) {
-          // User sudah login
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            if (!context.mounted) return;
-            context.read<BookmarkProvider>().startListening();
-            context.read<HistoryProvider>().startListening();
-          });
-          child = const MainPage(key: ValueKey('main'));
+          // Gunakan wrapper untuk mencegat proses render MainPage
+          // dan menampilkan loading sampai pengecekan admin selesai.
+          child = AdminCheckWrapper(
+            key: ValueKey(snapshot.data!.uid),
+            user: snapshot.data!,
+            child: const MainPage(key: ValueKey('main')),
+          );
         } else {
           // User tidak login
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -169,5 +179,93 @@ class _AuthGateState extends State<AuthGate> {
         );
       },
     );
+  }
+}
+
+class AdminCheckWrapper extends StatefulWidget {
+  final User user;
+  final Widget child;
+
+  const AdminCheckWrapper({
+    super.key,
+    required this.user,
+    required this.child,
+  });
+
+  @override
+  State<AdminCheckWrapper> createState() => _AdminCheckWrapperState();
+}
+
+class _AdminCheckWrapperState extends State<AdminCheckWrapper> {
+  bool _isLoading = true;
+  bool _isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdmin();
+  }
+
+  Future<void> _checkAdmin() async {
+    bool isAdmin = false;
+
+    // Lapis 1: cek custom claims di ID token
+    try {
+      final tokenResult = await widget.user.getIdTokenResult(true);
+      if (tokenResult.claims?['role'] == 'admin') isAdmin = true;
+    } catch (_) {}
+
+    // Lapis 2: cek field role di Firestore sebagai fallback
+    if (!isAdmin) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(widget.user.uid)
+            .get();
+        if (doc.exists && doc.data()?['role'] == 'admin') isAdmin = true;
+      } catch (_) {}
+    }
+
+    if (mounted) {
+      setState(() {
+        _isAdmin = isAdmin;
+        _isLoading = false;
+      });
+    }
+
+    if (isAdmin) {
+      // Tampilkan pesan error sebelum logout
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Akses ditolak. Akun Anda tidak memiliki izin untuk masuk ke aplikasi ini.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      // Jika tidak diizinkan, paksa logout. StreamBuilder di AuthGate akan 
+      // merespons dan me-render halaman login.
+      await FirebaseAuth.instance.signOut();
+    } else {
+      // Jika bukan admin, jalankan listener provider yang diperlukan MainPage
+      if (mounted) {
+        context.read<BookmarkProvider>().startListening();
+        context.read<HistoryProvider>().startListening();
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Tampilkan loading screen saat sedang mencek, 
+    // ATAU jika dia admin (karena sedang proses sign out).
+    if (_isLoading || _isAdmin) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    
+    // Jika aman (bukan admin & loading selesai), tampilkan MainPage.
+    return widget.child;
   }
 }

@@ -10,6 +10,9 @@ Widget buildInputField({
   VoidCallback? onToggleVisibility,
   TextEditingController? controller,
   String? Function(String?)? validator,
+  TextInputType? keyboardType,
+  TextInputAction? textInputAction,
+  void Function(String)? onFieldSubmitted,
 }) {
   return Builder(builder: (context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -29,6 +32,9 @@ Widget buildInputField({
           controller: controller,
           obscureText: isPassword ? isObscured : false,
           validator: validator,
+          keyboardType: keyboardType,
+          textInputAction: textInputAction,
+          onFieldSubmitted: onFieldSubmitted,
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
           decoration: InputDecoration(
             hintText: hint,
@@ -37,12 +43,15 @@ Widget buildInputField({
             fillColor: isDark ? AppColors.cardDark : const Color(0xFFEBE8E2),
             errorStyle: const TextStyle(fontSize: 12, color: AppColors.error),
             suffixIcon: isPassword
-                ? IconButton(
-                    onPressed: onToggleVisibility,
-                    icon: Icon(
-                      isObscured ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                      color: AppColors.accent,
-                      size: 20,
+                ? GestureDetector(
+                    onTap: onToggleVisibility,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Icon(
+                        isObscured ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        color: AppColors.accent,
+                        size: 20,
+                      ),
                     ),
                   )
                 : null,
@@ -58,10 +67,10 @@ Widget buildInputField({
               borderRadius: BorderRadius.circular(15),
               borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
       ],
     );
   });

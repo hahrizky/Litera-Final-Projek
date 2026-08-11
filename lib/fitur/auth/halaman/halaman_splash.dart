@@ -52,8 +52,8 @@ class _SplashScreenState extends State<SplashScreen>
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 600),
-          pageBuilder: (_, __, ___) => const AuthGate(),
-          transitionsBuilder: (_, animation, __, child) {
+          pageBuilder: (context, animation, secondaryAnimation) => const AuthGate(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
         ),

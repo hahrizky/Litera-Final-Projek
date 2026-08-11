@@ -37,7 +37,7 @@ class _RegisterPageState extends State<RegisterPage> {
   // ================= VALIDATION =================
   String? _validateName(String? value) {
     if (value == null || value.trim().isEmpty) return 'Nama tidak boleh kosong';
-    if (value.trim().length < 3) return 'Nama tidak boleh kosong'; 
+    if (value.trim().length < 3) return 'Nama minimal 3 karakter';
     return null;
   }
 
@@ -78,6 +78,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // ================= REGISTER =================
   Future<void> _handleRegister() async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     if (!_isAgreed) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -124,139 +125,172 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Scaffold(
         backgroundColor: AppColors.primary,
         appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-          const Text(
-            'Buat Akun',
-            style: TextStyle(
-              fontSize: 32,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Text(
-            'Bergabung dengan Litera sekarang',
-            style: TextStyle(color: Colors.white70),
-          ),
-          const SizedBox(height: 30),
-          Expanded(
-            child: Material(
-              color: const Color(0xFFF2F1ED),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(50)),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
-                child: SingleChildScrollView(
-                  child: Form(
-                    key: _formKey,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    child: Column(
-                      children: [
-                        buildInputField(
-                          label: 'Nama Lengkap',
-                          hint: "John Doe",
-                          controller: _nameController,
-                          validator: _validateName,
-                        ),
-                        buildInputField(
-                          label: 'Email',
-                          hint: "email@litera.com",
-                          controller: _emailController,
-                          validator: _validateEmail,
-                        ),
-                        buildInputField(
-                          label: 'Kata Sandi',
-                          hint: "Min. 8 karakter",
-                          isPassword: true,
-                          isObscured: _isPasswordObscured,
-                          controller: _passwordController,
-                          validator: _validatePassword,
-                          onToggleVisibility: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
-                        ),
-                        buildInputField(
-                          label: 'Konfirmasi Kata Sandi',
-                          hint: 'Konfirmasi Kata Sandi',
-                          isPassword: true,
-                          isObscured: _isConfirmObscured,
-                          controller: _confirmPasswordController,
-                          validator: _validateConfirmPassword,
-                          onToggleVisibility: () => setState(() => _isConfirmObscured = !_isConfirmObscured),
-                        ),
-
-                        // Checkbox
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _isAgreed,
-                              activeColor: AppColors.primary,
-                              onChanged: (v) => setState(() => _isAgreed = v ?? false),
-                            ),
-                            Expanded(
-                              child: Text.rich(
-                                TextSpan(
-                                  text: "Saya setuju dengan ",
-                                  children: [
-                                    TextSpan(
-                                      text: 'Syarat & Ketentuan',
-                                      style: const TextStyle(
-                                        color: AppColors.accent,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      recognizer: TapGestureRecognizer()..onTap = _showTermsDialog,
-                                    ),
-                                  ],
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Stack(
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                      child: IntrinsicHeight(
+                        child: SafeArea(
+                          bottom: false,
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Buat Akun',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                style: const TextStyle(fontSize: 12),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 25),
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _handleRegister,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            minimumSize: const Size(double.infinity, 60),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                          ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text(
-                                  'Daftar Sekarang',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                              const Text(
+                                'Bergabung dengan Litera sekarang',
+                                style: TextStyle(color: Colors.white70, fontSize: 13),
+                              ),
+                              const SizedBox(height: 16),
+                              Expanded(
+                                child: Material(
+                                  color: const Color(0xFFF2F1ED),
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(50)),
+                                  child: Padding(
+                                    padding: EdgeInsets.fromLTRB(30, 24, 30, 16 + MediaQuery.of(context).padding.bottom),
+                                    child: Form(
+                                      key: _formKey,
+                                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          buildInputField(
+                                            label: 'Nama Lengkap',
+                                            hint: "John Doe",
+                                            controller: _nameController,
+                                            validator: _validateName,
+                                            textInputAction: TextInputAction.next,
+                                            keyboardType: TextInputType.name,
+                                          ),
+                                          buildInputField(
+                                            label: 'Email',
+                                            hint: "email@litera.com",
+                                            controller: _emailController,
+                                            validator: _validateEmail,
+                                            keyboardType: TextInputType.emailAddress,
+                                            textInputAction: TextInputAction.next,
+                                          ),
+                                          buildInputField(
+                                            label: 'Kata Sandi',
+                                            hint: "Min. 8 karakter",
+                                            isPassword: true,
+                                            isObscured: _isPasswordObscured,
+                                            controller: _passwordController,
+                                            validator: _validatePassword,
+                                            textInputAction: TextInputAction.next,
+                                            onToggleVisibility: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
+                                          ),
+                                          buildInputField(
+                                            label: 'Konfirmasi Kata Sandi',
+                                            hint: 'Konfirmasi Kata Sandi',
+                                            isPassword: true,
+                                            isObscured: _isConfirmObscured,
+                                            controller: _confirmPasswordController,
+                                            validator: _validateConfirmPassword,
+                                            textInputAction: TextInputAction.done,
+                                            onFieldSubmitted: (_) => _handleRegister(),
+                                            onToggleVisibility: () => setState(() => _isConfirmObscured = !_isConfirmObscured),
+                                          ),
+
+                                          // Checkbox
+                                          Row(
+                                            children: [
+                                              Checkbox(
+                                                value: _isAgreed,
+                                                activeColor: AppColors.primary,
+                                                onChanged: (v) => setState(() => _isAgreed = v ?? false),
+                                              ),
+                                              Expanded(
+                                                child: Text.rich(
+                                                  TextSpan(
+                                                    text: "Saya setuju dengan ",
+                                                    children: [
+                                                      TextSpan(
+                                                        text: 'Syarat & Ketentuan',
+                                                        style: const TextStyle(
+                                                          color: AppColors.accent,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                        recognizer: TapGestureRecognizer()..onTap = _showTermsDialog,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  style: const TextStyle(fontSize: 12),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          ElevatedButton(
+                                            onPressed: _isLoading ? null : _handleRegister,
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.primary,
+                                              minimumSize: const Size(double.infinity, 54),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                            ),
+                                            child: _isLoading
+                                                ? const CircularProgressIndicator(color: Colors.white)
+                                                : const Text(
+                                                    'Daftar Sekarang',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 17,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          buildDivider('ATAU'),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Text("Sudah punya akun? "),
+                                              buildClickableText(
+                                                text: 'Masuk',
+                                                onTap: () => Navigator.pop(context),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 20),
-                        buildDivider('ATAU'),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text("Sudah punya akun? "),
-                            buildClickableText(
-                              text: 'Masuk',
-                              onTap: () => Navigator.pop(context),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
+                  );
+                },
+              ),
+              // Loading overlay
+              if (_isLoading)
+                Container(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   ),
                 ),
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
-      ),
-    ),
-  );
+    );
   }
 }

@@ -1,4 +1,4 @@
-/// App-wide constants: preference keys, API config, UI limits.
+/// Konstanta global aplikasi: kunci preferensi, konfigurasi API, dan batas UI.
 abstract final class AppConstants {
   // ── SharedPreferences keys ─────────────────────────────────────────────────
   static const String prefThemeMode = 'pref_theme_mode';
@@ -6,14 +6,11 @@ abstract final class AppConstants {
   static const String prefLanguageSelected = 'pref_language_selected';
   static const String prefOnboardingSeen = 'pref_onboarding_seen';
 
-  // ── Admin Config ────────────────────────────────────────────────────────────
-  static const List<String> adminEmails = [
-    'ekarizqiromadhon6@gmail.com',
-  ];
 
   // ── Google Books API ───────────────────────────────────────────────────────
-  /// Inject during build: flutter run --dart-define=GOOGLE_BOOKS_API_KEY=your_key_here
-  /// Or: flutter build apk --dart-define=GOOGLE_BOOKS_API_KEY=your_key_here
+  /// Cara inject key saat build:
+  /// flutter run --dart-define=GOOGLE_BOOKS_API_KEY=kunci_anda
+  /// flutter build apk --dart-define=GOOGLE_BOOKS_API_KEY=kunci_anda
   static const String booksApiBase = 'https://www.googleapis.com/books/v1/volumes';
   static const String booksApiKey = String.fromEnvironment('GOOGLE_BOOKS_API_KEY', defaultValue: '');
   static const int booksDefaultMax = 20;
@@ -27,7 +24,7 @@ abstract final class AppConstants {
   static const String colReadingHistory = 'reading_history';
   static const String colRatings = 'ratings';
 
-  // ── Reading challenge ──────────────────────────────────────────────────────
+  // ── Tantangan membaca ──────────────────────────────────────────────────────
   static const int readingChallengeTarget = 12;
 
   // ── UI ─────────────────────────────────────────────────────────────────────
@@ -41,7 +38,7 @@ abstract final class AppConstants {
   static const String localeEn = 'en';
   static const String defaultLocale = localeId;
 
-  // ── Quotes (shown on dashboard) ────────────────────────────────────────────
+  // ── Kutipan (ditampilkan di dashboard) ────────────────────────────────────
   static const List<Map<String, String>> quotes = [
     {
       'id': '"Buku adalah cermin; kamu hanya melihat di dalamnya apa yang sudah ada dalam dirimu."',

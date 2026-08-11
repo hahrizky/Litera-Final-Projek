@@ -1,7 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:litera2/core/konstan/konstan_aplikasi.dart';
 import 'package:litera2/fitur/profil/model/model_profil.dart';
 import 'package:litera2/fitur/profil/service/service_user.dart';
 import 'package:litera2/fitur/buku/service/service_riwayat.dart';
@@ -10,6 +10,27 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  // Helper: cek apakah user adalah admin
+  // Prioritas: (1) custom claims di ID token, (2) field role di Firestore
+  Future<bool> _isAdminUser(User user) async {
+    // Lapis 1: cek custom claims (forceRefresh agar token selalu fresh)
+    try {
+      final idTokenResult = await user.getIdTokenResult(true);
+      if (idTokenResult.claims?['role'] == 'admin') return true;
+    } catch (_) {}
+
+    // Lapis 2: cek field role di Firestore sebagai fallback
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (doc.exists && doc.data()?['role'] == 'admin') return true;
+    } catch (_) {}
+
+    return false;
+  }
 
   // 1. LOGIN GOOGLE
   Future<String> signInWithGoogle() async {
@@ -26,11 +47,18 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
 
-      await _auth.signInWithCredential(credential);
-      
+      final userCred = await _auth.signInWithCredential(credential);
+
+      // Blokir akun admin dari aplikasi user
+      if (userCred.user != null && await _isAdminUser(userCred.user!)) {
+        await _auth.signOut();
+        await _googleSignIn.signOut();
+        return "Akses ditolak. Akun Anda tidak memiliki izin untuk masuk ke aplikasi ini.";
+      }
+
       // Sync local reading history ke Firestore
       await ReadingHistoryService.syncLocalHistoryToFirestore();
-      
+
       return "success";
     } catch (e) {
       return e.toString();
@@ -48,17 +76,15 @@ class AuthService {
       final user = credential.user;
       if (user != null) {
         await user.updateDisplayName(name);
-        final isAdminEmail = AppConstants.adminEmails.contains(email.toLowerCase().trim());
-        // Create profile in Firestore with proper role
+        // Buat profil user di Firestore
         final profile = UserProfileModel(
           uid: user.uid,
           displayName: name,
           email: email,
           createdAt: DateTime.now(),
-          role: isAdminEmail ? 'admin' : 'user',
         );
         await UserService.saveProfile(profile);
-        
+
         // Sync local reading history ke Firestore
         await ReadingHistoryService.syncLocalHistoryToFirestore();
       }
@@ -74,25 +100,27 @@ class AuthService {
     try {
       UserCredential credential =
           await _auth.signInWithEmailAndPassword(email: email, password: password);
-      
-      // Sync profile if missing or update role if admin
+
       final user = credential.user;
       if (user != null) {
+        // Blokir akun admin dari aplikasi user
+        if (await _isAdminUser(user)) {
+          await _auth.signOut();
+          return "Akses ditolak. Akun Anda tidak memiliki izin untuk masuk ke aplikasi ini.";
+        }
+
+        // Sync profile jika belum ada
         final existing = await UserService.getProfile();
-        final isAdminEmail = AppConstants.adminEmails.contains(email.toLowerCase().trim());
         if (existing == null) {
           final profile = UserProfileModel(
             uid: user.uid,
             displayName: user.displayName ?? 'Pembaca',
             email: email,
             createdAt: DateTime.now(),
-            role: isAdminEmail ? 'admin' : 'user',
           );
           await UserService.saveProfile(profile);
-        } else if (isAdminEmail && existing.role != 'admin') {
-          await UserService.updateFields({'role': 'admin'});
         }
-        
+
         // Sync local reading history ke Firestore
         await ReadingHistoryService.syncLocalHistoryToFirestore();
       }
@@ -114,7 +142,7 @@ class AuthService {
     }
   }
 
-  // 5. RESET PASSWORD 
+  // 5. RESET PASSWORD
   Future<String> resetPassword(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
@@ -130,4 +158,30 @@ class AuthService {
       return "Gagal mengirim email";
     }
   }
+
+  // 6. DELETE ACCOUNT
+  Future<String> deleteAccount() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        // Hapus data pengguna di Firestore
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
+        
+        // Hapus otentikasi
+        await user.delete();
+        if (await _googleSignIn.isSignedIn()) {
+          await _googleSignIn.signOut();
+        }
+      }
+      return "success";
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        return "requires-recent-login";
+      }
+      return e.message ?? "Terjadi kesalahan saat menghapus akun";
+    } catch (e) {
+      return e.toString();
+    }
+  }
 }
+

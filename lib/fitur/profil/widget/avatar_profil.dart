@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+﻿import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:litera2/fitur/profil/controller/controller_profil.dart';
@@ -29,7 +29,7 @@ class ProfileAvatar extends StatelessWidget {
       onTap: isLoading ? null : onTap,
       child: Stack(
         children: [
-          // ── Lingkaran Foto ──
+          // â”€â”€ Lingkaran Foto â”€â”€
           Container(
             width: size,
             height: size,
@@ -47,7 +47,7 @@ class ProfileAvatar extends StatelessWidget {
                   : _buildImage(),
             ),
           ),
-          // ── Ikon Kamera ──
+          // â”€â”€ Ikon Kamera â”€â”€
           Positioned(
             bottom: 2,
             right: 2,
@@ -72,7 +72,7 @@ class ProfileAvatar extends StatelessWidget {
       return const Icon(Icons.person, size: 64, color: AppColors.primary);
     }
 
-    // Use direct URL only - ImgBB rejects query parameters like ?v=timestamp
+    // Gunakan URL langsung \u2014 ImgBB menolak query parameter seperti ?v=timestamp
     final url = photoUrl!.trim();
 
     return CachedNetworkImage(
@@ -81,8 +81,8 @@ class ProfileAvatar extends StatelessWidget {
       key: ValueKey(url),
       memCacheWidth: 256,
       maxWidthDiskCache: 256,
-      placeholder: (_, __) => const _LoadingPlaceholder(),
-      errorWidget: (_, __, error) {
+      placeholder: (context, url) => const _LoadingPlaceholder(),
+      errorWidget: (context, url, error) {
         debugPrint('[ProfileAvatar] Gagal memuat gambar ($url): $error');
         return const Icon(Icons.person, size: 64, color: AppColors.primary);
       },
@@ -124,11 +124,11 @@ class SmallProfileAvatar extends StatelessWidget {
             final user = controller.currentUser ?? snapshot.data;
             final url = user?.photoURL;
 
-            // Use direct URL only
+            // Gunakan URL langsung tanpa query parameter
             String? finalUrl;
             if (url != null && url.trim().isNotEmpty) {
               finalUrl = url.trim();
-              debugPrint('[SmallProfileAvatar] 🖼️ Loading URL: $finalUrl');
+              debugPrint('[SmallProfileAvatar] ðŸ–¼ï¸ Loading URL: $finalUrl');
             }
 
             return SizedBox(
@@ -144,7 +144,7 @@ class SmallProfileAvatar extends StatelessWidget {
                         height: radius * 2,
                         memCacheWidth: 96,
                         maxWidthDiskCache: 96,
-                        placeholder: (_, __) {
+                        placeholder: (context, url) {
                           return Container(
                             width: radius * 2,
                             height: radius * 2,
@@ -161,7 +161,7 @@ class SmallProfileAvatar extends StatelessWidget {
                             ),
                           );
                         },
-                        errorWidget: (_, __, error) {
+                        errorWidget: (context, url, error) {
                           debugPrint('[SmallProfileAvatar] Error: $error');
                           return Container(
                             width: radius * 2,
